@@ -11,11 +11,13 @@ namespace Infrastructure.Data.Repositories
 
         public RedisBasketRepository(IConnectionMultiplexer redisConnection)
         {
-            _redisConnection = redisConnection ?? throw new ArgumentNullException(nameof(redisConnection));
+            _redisConnection = redisConnection;
         }
 
         public async Task<Basket> GetBasketAsync(string basketId)
         {
+            if (_redisConnection == null) return null;
+
             var database = _redisConnection.GetDatabase();
             var basketData = await database.StringGetAsync(GetRedisKey(basketId));
 
@@ -26,6 +28,8 @@ namespace Infrastructure.Data.Repositories
 
         public async Task<Basket> UpdateBasketAsync(Basket basket)
         {
+            if (_redisConnection == null) return basket;
+
             var database = _redisConnection.GetDatabase();
             await database.StringSetAsync(GetRedisKey(basket.Id), JsonSerializer.Serialize(basket));
 
@@ -34,6 +38,8 @@ namespace Infrastructure.Data.Repositories
 
         public async Task<bool> DeleteBasketAsync(string basketId)
         {
+            if (_redisConnection == null) return true;
+
             var database = _redisConnection.GetDatabase();
             return await database.KeyDeleteAsync(GetRedisKey(basketId));
         }

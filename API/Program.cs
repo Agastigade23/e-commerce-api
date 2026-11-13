@@ -29,8 +29,22 @@ builder.Services.AddDbContext<ApplicationIdentityDbContext>(opt =>
 });
 builder.Services.AddSingleton<IConnectionMultiplexer>(c =>
 {
-    var config = ConfigurationOptions.Parse(builder.Configuration.GetConnectionString("Redis"), true);
-    return ConnectionMultiplexer.Connect(config);
+    try
+    {
+        var redisConnection = builder.Configuration.GetConnectionString("Redis");
+        if (string.IsNullOrEmpty(redisConnection))
+        {
+            redisConnection = "localhost:6379";
+        }
+        var config = ConfigurationOptions.Parse(redisConnection, true);
+        return ConnectionMultiplexer.Connect(config);
+    }
+    catch (Exception ex)
+    {
+        var logger = c.GetRequiredService<ILogger<Program>>();
+        logger.LogWarning($"Redis connection failed: {ex.Message}. Redis features will be unavailable.");
+        return null;
+    }
 });
 builder.Services.Configure<TokenSettings>(builder.Configuration.GetSection("TokenSettings"));
 
@@ -83,30 +97,41 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("AllowAngularApp");
-app.UseHttpsRedirection();
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
 
-using var scope = app.Services.CreateScope();
-var services = scope.ServiceProvider;
-var context = services.GetRequiredService<EcommerceContext>();
-// Create an instance of ILogger specifically for EcommerceContextSeed
-var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-var logger = loggerFactory.CreateLogger<EcommerceContextSeed>();
-
 try
 {
+    using var scope = app.Services.CreateScope();
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<EcommerceContext>();
+    var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+    var logger = loggerFactory.CreateLogger<EcommerceContextSeed>();
+
+    logger.LogInformation("Applying migrations...");
     await context.Database.MigrateAsync();
-    // Create an instance of EcommerceContextSeed
+
+    logger.LogInformation("Seeding product data...");
     var ecommerceContextSeed = new EcommerceContextSeed(logger);
     await ecommerceContextSeed.SeedDataAsync(context);
-    // Seed data for ApplicationIdentityDbContext
+
+    logger.LogInformation("Seeding identity data...");
     await ApplicationIdentityDbContextSeed.SeedAsync(services);
+
+    logger.LogInformation("Database initialization completed successfully");
 }
 catch (Exception ex)
 {
-    logger.LogError(ex, "An error occured during migration");
+    var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+    var logger = loggerFactory.CreateLogger<Program>();
+    logger.LogError(ex, "An error occurred during database initialization");
 }
 app.Run();
