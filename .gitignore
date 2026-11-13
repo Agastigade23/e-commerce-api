@@ -1,0 +1,59 @@
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio cache/options
+.vs/
+
+# Visual Studio Code
+.vscode/
+
+# IDE
+.idea/
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.sln.iml
+
+# Files built by Visual Studio
+*.obj
+*.exe
+*.exp
+*.pdb
+*.user
+*.aps
+*.pch
+*.vspscc
+*.vsp
+*.vspx
+*.psess
+*.vsp
+*.vspx
+*.sap
+
+# Docker
+docker-compose.override.yaml
+
+# Node modules (if applicable)
+node_modules/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
