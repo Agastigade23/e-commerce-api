@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  # .NET API Service
+  api:
+    image: ecommerce-api:latest
+    container_name: ecommerce-api
+    ports:
+      - "5000:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:80
+    networks:
+      - ecommerce-network
+
+  # Angular UI Service (if you have Docker image)
+  angular:
+    image: angular-e-commerce:latest
+    container_name: ecommerce-ui
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+    networks:
+      - ecommerce-network
+
+networks:
+  ecommerce-network:
+    driver: bridge
